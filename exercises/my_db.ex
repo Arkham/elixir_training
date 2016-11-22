@@ -1,8 +1,10 @@
 defmodule MyDb do
+  ## Public API
+
   def start do
     pid = spawn(__MODULE__, :init, [])
     Process.register(pid, :my_db)
-    :ok
+    {:ok, pid}
   end
 
   def stop, do: cast(:stop)
@@ -13,11 +15,13 @@ defmodule MyDb do
   def lock, do: call(:lock)
   def unlock, do: call(:unlock)
 
-  def init do
+  ## Callbacks
+
+  defp init do
     loop(Db.new())
   end
 
-  def loop(db) do
+  defp loop(db) do
     receive do
       {:request, _pid, :stop} ->
         Db.destroy(db)
@@ -39,7 +43,7 @@ defmodule MyDb do
     end
   end
 
-  def lock_loop(db, owner) do
+  defp lock_loop(db, owner) do
     receive do
       {:request, _pid, :stop} ->
         Db.destroy(db)
@@ -69,7 +73,7 @@ defmodule MyDb do
     end
   end
 
-  def cast(command) do
+  defp cast(command) do
     send(:my_db, {:request, self(), command})
     :ok
   end
